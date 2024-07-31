@@ -1,0 +1,16 @@
+{
+  "pages": {
+    "/makereal.tldraw.com/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/makereal.tldraw.com/page.css",
+      "static/chunks/app/makereal.tldraw.com/page.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ]
+  }
+}

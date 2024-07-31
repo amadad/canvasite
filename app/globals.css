@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+	overscroll-behavior-x: none;
+}
+
+.tlui-help-menu {
+	display: none !important;
+}
+
+.tlui-debug-panel {
+	display: none !important;
+}
+
+.tldraw__editor {
+	position: fixed;
+	inset: 0px;
+	overflow: hidden;
+}
+
+.lockup__link {
+	position: absolute;
+	z-index: var(--layer-panels);
+	bottom: 0px;
+	right: 0px;
+}
+
+.lockup__link__mobile {
+	bottom: 60px;
+}
+
+.question__button {
+	all: unset;
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	background-color: none;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.lockup__link img {
+	height: 38px;
+	padding: 8px;
+}
+
+.tlui-input.apikey_input {
+	background-color: var(--color-muted-2);
+	flex-grow: 2;
+	border-radius: var(--radius-2);
+	padding: 0px var(--space-4);
+	position: relative;
+}
+
+.apikey_select {
+	position: relative;
+	background-color: var(--color-muted-2);
+	border-radius: var(--radius-2);
+	padding: 0px var(--space-3);
+	height: 40px;
+	position: relative;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	text-indent: 1px;
+	text-overflow: '';
+	font-size: 12px;
+	font-family: Inter, sans-serif;
+}
+
+.apikey_select::after {
+	content: '▼';
+	color: var(--color-text-0);
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 99;
+	font-size: 12px;
+	font-family: Inter, sans-serif;
+}
+
+.apikey_help_icon {
+	pointer-events: none;
+}
+
+.apikey_input.apikey_input__invalid {
+	color: red !important;
+}
