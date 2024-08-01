@@ -5,21 +5,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start -p 3000"
   },
   "dependencies": {
     "@tldraw/tldraw": "^2.0.0-canary.d0f6ef80fcf9",
-    "next": "14.0.3",
+    "next": "^14.2.5",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "20.14.13",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.0.3",
-    "typescript": "^5"
+    "typescript": "5.5.4"
   }
 }

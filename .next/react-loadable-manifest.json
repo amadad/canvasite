@@ -1,6 +1,6 @@
 {
-  "app/makereal.tldraw.com/page.tsx -> tldraw": {
-    "id": "app/makereal.tldraw.com/page.tsx -> tldraw",
+  "app/page.tsx -> @tldraw/tldraw": {
+    "id": 4159,
     "files": []
   }
 }

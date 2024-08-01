@@ -1,14 +1,1 @@
-{
-  "node": {
-    "3d6d862fc34c21884ea7e778200af6c90453cf3e": {
-      "workers": {
-        "app/makereal.tldraw.com/page": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Famadad%2FProjects%2Fmake-real%2Fapp%2Flib%2FuploadLink.tsx%22%2C%5B%22uploadLink%22%5D%5D%5D&__client_imported__=true!"
-      },
-      "layer": {
-        "app/makereal.tldraw.com/page": "action-browser"
-      }
-    }
-  },
-  "edge": {},
-  "encryptionKey": "ZgPnAAZs8RrweABiL8Ym4016XsUjEfL4AaxPF4rwbNA="
-}
+{"node":{},"edge":{},"encryptionKey":"/vKpIUeJ9Mx6MyAeBNYnkCkfv1KCvkyMhojdj0/6PO0="}

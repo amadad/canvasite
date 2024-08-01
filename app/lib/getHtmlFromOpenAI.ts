@@ -92,7 +92,7 @@ export async function getHtmlFromOpenAI({
 	})
 
 	const body: GPT4VCompletionRequest = {
-		model: 'gpt-4-vision-preview',
+		model: 'gpt-4o-mini',
 		max_tokens: 4096,
 		temperature: 0,
 		messages,
@@ -139,7 +139,7 @@ type MessageContent =
 	  )[]
 
 export type GPT4VCompletionRequest = {
-	model: 'gpt-4-vision-preview'
+	model: 'gpt-4o-mini'
 	messages: {
 		role: 'system' | 'user' | 'assistant' | 'function'
 		content: MessageContent
