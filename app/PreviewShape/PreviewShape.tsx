@@ -1,59 +1,48 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { ReactElement, useEffect, useRef } from 'react'
 import {
 	BaseBoxShapeUtil,
 	DefaultSpinner,
 	HTMLContainer,
+	Icon,
 	SvgExportContext,
 	TLBaseShape,
-	TldrawUiIcon,
 	Vec,
 	stopEventPropagation,
 	toDomPrecision,
 	useIsEditing,
+	useToasts,
 	useValue,
-} from 'tldraw'
-import { Dropdown } from '../components/Dropdown'
-import { LINK_HOST, PROTOCOL } from '../lib/hosts'
+} from '@tldraw/tldraw'
 
 export type PreviewShape = TLBaseShape<
-	'preview',
+	'response',
 	{
 		html: string
-		parts: string[]
-		source: string
 		w: number
 		h: number
-		linkUploadVersion?: number
-		uploadedShapeId?: string
-		dateCreated?: number
 	}
 >
 
 export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
-	static override type = 'preview' as const
+	static override type = 'response' as const
 
 	getDefaultProps(): PreviewShape['props'] {
 		return {
 			html: '',
-			source: '',
-			parts: [],
 			w: (960 * 2) / 3,
 			h: (540 * 2) / 3,
-			dateCreated: Date.now(),
 		}
 	}
 
-	// Only allow editing once the shape's content is finished
-	override canEdit = (shape: PreviewShape) =>
-		shape.props.parts.length > 0 || shape.props.html.length > 0
-
-	override isAspectRatioLocked = (_shape: PreviewShape) => false
-
-	override canResize = (_shape: PreviewShape) => true
+	override canEdit = () => true
+	override isAspectRatioLocked = () => false
+	override canResize = () => true
+	override canBind = () => false
+	override canUnmount = () => false
 
 	override component(shape: PreviewShape) {
 		const isEditing = useIsEditing(shape.id)
+		const toast = useToasts()
 
 		const boxShadow = useValue(
 			'box shadow',
@@ -64,196 +53,144 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 			[this.editor]
 		)
 
-		const { linkUploadVersion, uploadedShapeId } = shape.props
-
-		const isOnlySelected = useValue(
-			'is only selected',
-			() => this.editor.getOnlySelectedShapeId() === shape.id,
-			[shape.id, this.editor]
+		// Kind of a hack—we're preventing users from pinching-zooming into the iframe
+		const htmlToUse = shape.props.html.replace(
+			`</body>`,
+			`<script src="https://unpkg.com/html2canvas"></script><script>
+			// send the screenshot to the parent window
+  			window.addEventListener('message', function(event) {
+    		if (event.data.action === 'take-screenshot' && event.data.shapeid === "${shape.id}") {
+      		html2canvas(document.body, {useCors : true}).then(function(canvas) {
+        		const data = canvas.toDataURL('image/png');
+        		window.parent.postMessage({screenshot: data, shapeid: "${shape.id}"}, "*");
+      		});
+    		}
+  			}, false);
+			document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+</body>`
 		)
-
-		const rIframe = useRef<HTMLIFrameElement>(null)
-
-		const isLoading = linkUploadVersion === undefined || uploadedShapeId !== shape.id
-
-		const uploadUrl = [PROTOCOL, LINK_HOST, '/', shape.id.replace(/^shape:/, '')].join('')
-
-		const htmlIsEmpty = shape.props.parts?.length === 0
-
-		const rCursor = useRef(0)
-
-		useEffect(() => {
-			if (!isLoading) return
-			const iframe = rIframe.current
-			if (!iframe) return
-
-			if (!shape.props.parts) return
-
-			for (let i = rCursor.current; i < shape.props.parts.length; i++) {
-				const part = shape.props.parts[i]
-				iframe.contentDocument.write(part)
-			}
-
-			rCursor.current = shape.props.parts.length
-
-			// iframe.contentDocument.close()
-			// iframe.contentDocument.open()
-			// iframe.contentDocument.write(html)
-		}, [isLoading, shape.props.parts])
 
 		return (
 			<HTMLContainer className="tl-embed-container" id={shape.id}>
-				{isLoading ? (
-					<div
+				{htmlToUse ? (
+					<iframe
+						id={`iframe-1-${shape.id}`}
+						srcDoc={htmlToUse}
+						width={toDomPrecision(shape.props.w)}
+						height={toDomPrecision(shape.props.h)}
+						draggable={false}
 						style={{
-							position: 'relative',
-							width: '100%',
-							height: '100%',
-							backgroundColor: 'var(--color-culled)',
+							pointerEvents: isEditing ? 'auto' : 'none',
 							boxShadow,
 							border: '1px solid var(--color-panel-contrast)',
 							borderRadius: 'var(--radius-2)',
 						}}
-					>
-						<iframe
-							ref={rIframe}
-							id={`iframe-1-${shape.id}`}
-							width={toDomPrecision(shape.props.w)}
-							height={toDomPrecision(shape.props.h)}
-							draggable={false}
-							style={{
-								opacity: 0.62,
-								backgroundColor: 'var(--color-panel)',
-								pointerEvents: 'none', // isEditing ? 'auto' : 'none',
-								boxShadow,
-								border: '1px solid var(--color-panel-contrast)',
-								borderRadius: 'var(--radius-2)',
-							}}
-						/>
-						<div
-							style={{
-								all: 'unset',
-								position: 'absolute',
-								top: -3,
-								right: -45,
-								height: 40,
-								width: 40,
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								cursor: 'pointer',
-								pointerEvents: 'all',
-							}}
-						>
-							<DefaultSpinner />
-						</div>
-					</div>
+					/>
 				) : (
-					<>
-						<iframe
-							id={`iframe-1-${shape.id}`}
-							src={`${uploadUrl}?preview=1&v=${linkUploadVersion}`}
-							width={toDomPrecision(shape.props.w)}
-							height={toDomPrecision(shape.props.h)}
-							draggable={false}
+					<div
+						style={{
+							width: '100%',
+							height: '100%',
+							backgroundColor: 'var(--color-muted-2)',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							border: '1px solid var(--color-muted-1)',
+						}}
+					>
+						<DefaultSpinner />
+					</div>
+				)}
+				<div
+					style={{
+						position: 'absolute',
+						top: 0,
+						right: -40,
+						height: 40,
+						width: 40,
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						cursor: 'pointer',
+						pointerEvents: 'all',
+					}}
+					onClick={() => {
+						if (navigator && navigator.clipboard) {
+							navigator.clipboard.writeText(shape.props.html)
+							toast.addToast({
+								icon: 'duplicate',
+								title: 'Copied to clipboard',
+							})
+						}
+					}}
+					onPointerDown={stopEventPropagation}
+				>
+					<Icon icon="duplicate" />
+				</div>
+				{htmlToUse && (
+					<div
+						style={{
+							textAlign: 'center',
+							position: 'absolute',
+							bottom: isEditing ? -40 : 0,
+							padding: 4,
+							fontFamily: 'inherit',
+							fontSize: 12,
+							left: 0,
+							width: '100%',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							pointerEvents: 'none',
+						}}
+					>
+						<span
 							style={{
-								backgroundColor: 'var(--color-panel)',
-								pointerEvents: isEditing ? 'auto' : 'none',
-								boxShadow,
-								border: '1px solid var(--color-panel-contrast)',
-								borderRadius: 'var(--radius-2)',
-							}}
-						/>
-						{isOnlySelected && (
-							<div
-								style={{
-									all: 'unset',
-									position: 'absolute',
-									top: -3,
-									right: -45,
-									height: 40,
-									width: 40,
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-									cursor: 'pointer',
-									pointerEvents: 'all',
-								}}
-							>
-								<Dropdown boxShadow={boxShadow} html={shape.props.html} uploadUrl={uploadUrl}>
-									<button
-										className="bg-white rounded p-2"
-										style={{ boxShadow }}
-										onPointerDown={stopEventPropagation}
-									>
-										<TldrawUiIcon icon="dots-vertical" />
-									</button>
-								</Dropdown>
-							</div>
-						)}
-						<div
-							style={{
-								textAlign: 'center',
-								position: 'absolute',
-								bottom: isEditing ? -40 : 0,
-								padding: 4,
-								fontFamily: 'inherit',
-								fontSize: 12,
-								left: 0,
-								width: '100%',
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								pointerEvents: 'none',
+								background: 'var(--color-panel)',
+								padding: '4px 12px',
+								borderRadius: 99,
+								border: '1px solid var(--color-muted-1)',
 							}}
 						>
-							<span
-								style={{
-									background: 'var(--color-panel)',
-									padding: '4px 12px',
-									borderRadius: 99,
-									border: '1px solid var(--color-muted-1)',
-								}}
-							>
-								{isEditing ? 'Click the canvas to exit' : 'Double click to interact'}
-							</span>
-						</div>
-					</>
+							{isEditing ? 'Click the canvas to exit' : 'Double click to interact'}
+						</span>
+					</div>
 				)}
 			</HTMLContainer>
 		)
 	}
 
-	override toSvg(shape: PreviewShape, _ctx: SvgExportContext) {
+	override toSvg(shape: PreviewShape, _ctx: SvgExportContext): SVGElement | Promise<SVGElement> {
+		const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
 		// while screenshot is the same as the old one, keep waiting for a new one
-		return new Promise<ReactElement>((resolve, reject) => {
-			if (window === undefined) {
-				reject()
-				return
-			}
-
+		return new Promise((resolve, _) => {
+			if (window === undefined) return resolve(g)
 			const windowListener = (event: MessageEvent) => {
 				if (event.data.screenshot && event.data?.shapeid === shape.id) {
+					const image = document.createElementNS('http://www.w3.org/2000/svg', 'image')
+					image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', event.data.screenshot)
+					image.setAttribute('width', shape.props.w.toString())
+					image.setAttribute('height', shape.props.h.toString())
+					g.appendChild(image)
 					window.removeEventListener('message', windowListener)
 					clearTimeout(timeOut)
-
-					resolve(<PreviewImage href={event.data.screenshot} shape={shape} />)
+					resolve(g)
 				}
 			}
 			const timeOut = setTimeout(() => {
-				reject()
+				resolve(g)
 				window.removeEventListener('message', windowListener)
 			}, 2000)
 			window.addEventListener('message', windowListener)
 			//request new screenshot
 			const firstLevelIframe = document.getElementById(`iframe-1-${shape.id}`) as HTMLIFrameElement
 			if (firstLevelIframe) {
-				firstLevelIframe.contentWindow.postMessage(
+				firstLevelIframe.contentWindow!.postMessage(
 					{ action: 'take-screenshot', shapeid: shape.id },
 					'*'
 				)
 			} else {
-				console.error('first level iframe not found or not accessible')
+				console.log('first level iframe not found or not accessible')
 			}
 		})
 	}
@@ -263,7 +200,15 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 	}
 }
 
-// todo: export these from tldraw
+function getRotatedBoxShadow(rotation: number) {
+	const cssStrings = ROTATING_BOX_SHADOWS.map((shadow) => {
+		const { offsetX, offsetY, blur, spread, color } = shadow
+		const vec = new Vec(offsetX, offsetY)
+		const { x, y } = vec.rot(-rotation)
+		return `${x}px ${y}px ${blur}px ${spread}px ${color}`
+	})
+	return cssStrings.join(', ')
+}
 
 const ROTATING_BOX_SHADOWS = [
 	{
@@ -281,17 +226,3 @@ const ROTATING_BOX_SHADOWS = [
 		color: '#0000001f',
 	},
 ]
-
-function getRotatedBoxShadow(rotation: number) {
-	const cssStrings = ROTATING_BOX_SHADOWS.map((shadow) => {
-		const { offsetX, offsetY, blur, spread, color } = shadow
-		const vec = new Vec(offsetX, offsetY)
-		const { x, y } = vec.rot(-rotation)
-		return `${x}px ${y}px ${blur}px ${spread}px ${color}`
-	})
-	return cssStrings.join(', ')
-}
-
-function PreviewImage({ shape, href }: { shape: PreviewShape; href: string }) {
-	return <image href={href} width={shape.props.w.toString()} height={shape.props.h.toString()} />
-}

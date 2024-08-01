@@ -1,6 +1,6 @@
-import { Editor, TLGeoShape, TLTextShape } from 'tldraw'
+import { Editor, TLGeoShape, TLTextShape } from '@tldraw/tldraw'
 
-export function getTextFromSelectedShapes(editor: Editor) {
+export function getSelectionAsText(editor: Editor) {
 	const selectedShapeIds = editor.getSelectedShapeIds()
 	const selectedShapeDescendantIds = editor.getShapeAndDescendantIds(selectedShapeIds)
 
@@ -19,21 +19,21 @@ export function getTextFromSelectedShapes(editor: Editor) {
 		})
 		.sort((a, b) => {
 			// top first, then left, based on page position
-			const pageBoundsA = editor.getShapePageBounds(a)
-			const pageBoundsB = editor.getShapePageBounds(b)
+			const pageBoundsA = editor.getShapePageBounds(a)!
+			const pageBoundsB = editor.getShapePageBounds(b)!
 
 			return pageBoundsA.y === pageBoundsB.y
 				? pageBoundsA.x < pageBoundsB.x
 					? -1
 					: 1
 				: pageBoundsA.y < pageBoundsB.y
-				  ? -1
-				  : 1
+				? -1
+				: 1
 		})
-		.map((shape: TLTextShape | TLGeoShape) => {
+		.map((shape) => {
 			if (!shape) return null
-			const text = shape.props.text ?? null
-			if (shape.props.color === 'red') {
+			const text = (shape as TLTextShape | TLGeoShape).props.text ?? null
+			if ((shape as TLTextShape | TLGeoShape).props.color === 'red') {
 				return `Annotation: ${text}`
 			}
 			return text
