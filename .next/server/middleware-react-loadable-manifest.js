@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/page.tsx -> @tldraw/tldraw":{"id":4159,"files":[]}}';
